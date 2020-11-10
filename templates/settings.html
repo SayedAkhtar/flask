@@ -1,0 +1,125 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="">Settings</h2>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type=file name=brand>
+      <input type=submit value=Upload>
+    </form>
+
+    <hr>
+    <h3>SAP Configuration</h3>
+    <form action="/api/sapconfig" method="POST" id="sapconfig_form">
+      <div class="col-md-6 col-sm-12">
+      <div class="form-group">
+        <label for="sap-success-url">SAP Success Factor URL:</label>
+        <input required type="text" class="form-control" id="sap-success-url" name="sap-success-url" placeholder="Enter Sap Username">
+      </div>
+
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input required type="text" class="form-control" id="username" name="username" placeholder="Enter Sap Username">
+      </div>
+      <div class="form-group" style="position: relative;">
+        <label for="password">Password</label>
+        <input required type="password" class="form-control" id="password" name="password" placeholder="Sap Password">
+        <span id="toggle-password-veiw" style="position: absolute;
+        top: 39px;
+        left: 95%;">&#128065;</span>
+      </div>
+      <button type="submit" class="btn btn-success">Submit</button>
+      </div>
+    </form>
+
+    <hr>
+    <h3>Kiosk Settings</h3>
+    <form action="/api/kioskconfig" method="POST" id="kioskconfig_form">
+      <div class="col-md-6 col-sm-12">
+      <div class="form-group">
+        <label for="kiosk_brand_name">Brand Name:</label>
+        <input required type="text" class="form-control" id="kiosk_brand_name" name="kiosk_brand_name" placeholder="Enter Kiosk Heading">
+      </div>
+
+      <div class="form-group">
+        <label for="kiosk_brand_below_message">Sub heading</label>
+        <input required type="text" class="form-control" id="kiosk_brand_below_message" name="kiosk_brand_below_message" placeholder="Enter Kiosk Sub-heading">
+      </div>
+
+      <div class="form-group">
+        <label for="kiosk_thankyou_message">Thankyou Message</label>
+        <input required type="text" class="form-control" id="kiosk_thankyou_message" name="kiosk_thankyou_message" placeholder="Enter Kiosk Thankyou Message">
+      </div>
+      
+      <button type="submit" class="btn btn-success">Submit</button>
+      </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function(){
+    $.get('/api/sapconfig', function(response){
+      console.log(response.data);
+      $("#username").val(response.data.username);
+      $("#password").val(response.data.password);
+      $("#sap-success-url").val(response.data.url);
+    });
+    $('#toggle-password-veiw').click(function(){
+      if($("#password").attr('type') == 'password'){
+        $("#password").attr('type', 'text');
+      }else{
+        $("#password").attr('type', 'password');
+      }
+    });
+
+    $('#sapconfig_form').submit(function(event){
+      event.preventDefault();
+      data = {
+        username: $("#username").val(),
+        password: $('#password').val(),
+        url: $('#sap-success-url').val()
+      };
+      $.ajax({
+        url: '/api/sapconfig',
+        type: 'post',
+        dataType: 'json',
+        contentType: 'application/json',
+        data : JSON.stringify(data),
+        success: function(response){
+          alert(JSON.stringify(response));
+        }
+      })
+    });
+
+    $.get('/api/getJson/kiosk_config', function(response){
+      console.log(response);
+      $("#kiosk_brand_name").val(response.brand_name);
+      $("#kiosk_brand_below_message").val(response.brand_below_message);
+      $("#kiosk_thankyou_message").val(response.thankyou_message);
+    });
+
+    $('#kioskconfig_form').submit(function(event){
+      event.preventDefault();
+      data = {
+        brand_name: $("#kiosk_brand_name").val(),
+        brand_below_message: $('#kiosk_brand_below_message').val(),
+        thankyou_message: $('#kiosk_thankyou_message').val()
+      };
+      $.ajax({
+        url: '/api/postJson/kiosk_config',
+        type: 'post',
+        dataType: 'json',
+        contentType: 'application/json',
+        data : JSON.stringify(data),
+        success: function(response){
+          alert(JSON.stringify(response));
+        }
+      })
+    });
+
+  });
+</script>
+{% endblock %}

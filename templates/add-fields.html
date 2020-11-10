@@ -1,0 +1,271 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- Begin Page Content -->
+    <div class="container-fluid">
+
+
+      <!-- Content Row -->
+
+      <div class="row">
+
+        <div class="col-xl-6 col-lg-6 col-sm-12">
+          <div class="card shadow mb-4">
+            <!-- Card Header - Dropdown -->
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+              <h6 class="m-0 font-weight-bold text-primary">Add/Edit Fields Here:</h6>
+            </div>
+            <!-- Card Body -->
+            <div class="card-body" style="height: 460px; overflow-y: scroll;">
+              <form action="#" method="post" name="adding-input-field" id="adding-input-field">
+                <div class="form-group">
+                    <label for="FieldLabel">Label</label>
+                    <input type="text" class="form-control" id="FieldLabel" name="fieldLabel" aria-describedby="nameHelp">
+                </div>
+                <div class="form-group">
+                    <label for="FieldName">Name</label>
+                    <input type="text" class="form-control" id="FieldName" name="fieldName" aria-describedby="nameHelp">
+                </div>
+                <div class="form-group">
+                    <label for="FieldPlaceholder">Placeholder</label>
+                    <input type="text" class="form-control" id="FieldPlaceholder" name="fieldPlaceholder" aria-describedby="nameHelp">
+                </div>
+                <div class="form-group">
+                    <label for="FieldType">Select Feild Type</label>
+                    <select class="form-control" id="FieldType" name="fieldType">
+                        <option value="text">Text Feild</option>
+                        <option value="email">Email</option>
+                        <option value="number">Number</option>
+                        <option value="password">Password</option>
+                        <option value="select">Select Box</option>
+                    </select>
+                </div>
+                <div class="form-group d-none" id="select-box-option-container">
+                    <label for="SelectOption">Enter Options</label>
+                    <input type="text" class="form-control" id="SelectOption" aria-describedby="nameHelp" name="selectOptions"
+                           placeholder="Example: Option 1, Option2, Option 3...."
+                    >
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="true" id="IsRequired" name="isRequired">
+                    <label class="form-check-label" for="IsRequired">
+                        Required ?
+                    </label>
+                </div>
+                <button type="submit" class="mt-4 btn btn-primary no-padding">Add Field</button>
+            </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-6 col-lg-6 col-sm-12">
+          <div class="card shadow mb-4">
+            <!-- Card Header - Dropdown -->
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+              <h6 class="m-0 font-weight-bold text-primary">Preview Fields:</h6>
+            </div>
+            <!-- Card Body -->
+            <div class="card-body" style="height: 460px; overflow-y: scroll;" id="field-preview">
+
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    <div class="row">
+        <div class="col-12 mb-5">
+            <div class="buttons-container d-flex justify-content-center">
+                <button class="btn btn-circle btn-lg btn-success mx-4" id="ShowConfirmModal"><i class="fas fa-w fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+
+
+    </div>
+<div class="modal" tabindex="-1" role="dialog" id="fieldsConfirmModal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Change</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Changing User Input Fields Will Lead to creation of new Database file.</p>
+          <p>All database files are backed up in Backup Folder. From where it can be dowloaded.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="PostFields">Save changes</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="location.reload()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /.container-fluid -->
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function (){
+
+        fieldJson = [];
+
+        //Fetches Fields From JSON, saves it to session storage and displays it in frontend
+        $.ajax({
+            url: '/api/getJson/fields',
+            type: 'get',
+            success: function (response){
+                sessionStorage.setItem('user-fields', JSON.stringify(response));
+                fieldJson.push(...response);
+
+                $.each(fieldJson, function (index, value){
+                  if(value.type == "select"){
+                  $("#field-preview").append( `<div>${ConstructSelectFeild(value.label, value.name, value.values, value.required, true, true )}</div>`);
+
+                    }
+                    else{
+                      $("#field-preview").append( `<div>${ConstructFormFeild(value.label, value.name, value.type,  value.placeholder, value.required, true, true )}</div>`);
+                    }
+                });
+            },
+            error: function (error){
+                alert(JSON.stringify(error));
+            }
+        });
+
+        $("#field-preview").on("click", "#delete-input-field", function (){
+            $(this).parent().parent().parent().parent().remove();
+            var name = $(this).data('fieldname');
+            fieldJson = $.grep(fieldJson, function (obj){
+                return obj.name != name;
+            });
+
+            sessionStorage.setItem('user-fields', JSON.stringify(fieldJson));
+            // $.ajax({
+            //     url: '/api/fields',
+            //     type: 'post',
+            //     dataType: 'json',
+            //     contentType: 'application/json',
+            //     success: function (data) {
+            //       alert(JSON.stringify(data));
+            //     },
+            //     error: function (data,status,error){
+            //       alert(JSON.stringify(data)+" //"+JSON.stringify(error));
+            //     },
+            //     data: JSON.stringify(fieldJson)
+            //   });
+
+        });
+
+        $("#field-preview").on("click", "#edit-input-field", function (){
+            var name = $(this).data('fieldname');
+            temp = [];
+            $.each(fieldJson, (index, element)=>{
+                if(element.name == name){
+                    $("#FieldLabel").val(element.label)
+                    $("#FieldName").val(element.name)
+                    $("#FieldPlaceholder").val(element.placeholder)
+                    $("#FieldType").val(element.type)
+                    $("#IsRequired")[0].checked = element.required
+                    if(element.type == "select"){
+                        let t = "";
+                        $.each(element.values, (i, e) => {
+                            t = t+e+",";
+                        });
+                        $("#select-box-option-container").removeClass('d-none')
+                        $("#SelectOption").val(t)
+                    }
+                }else{
+                    temp.push(element);
+                }
+            });
+            fieldJson = temp;
+            sessionStorage.setItem('user-fields', JSON.stringify(fieldJson))
+            $(this).parent().parent().parent().parent().remove();
+
+        });
+
+        $("#ShowConfirmModal").click(() => $("#fieldsConfirmModal").modal("show"))
+
+        $("#PostFields").click(function(){
+            $("#fieldsConfirmModal").modal("hide")
+            if(fieldJson.length > 0){
+              $.ajax({
+                url: '/api/fields',
+                type: 'post',
+                dataType: 'json',
+                contentType: 'application/json',
+                success: function (data) {
+                  alert(JSON.stringify(data));
+                },
+                error: function (data,status,error){
+                  alert(JSON.stringify(data)+" //"+JSON.stringify(error));
+                },
+                data: JSON.stringify(fieldJson)
+              });
+            }
+        });
+
+        $("#adding-input-field").submit(function (event){
+            event.preventDefault();
+            var fieldLabel = event.target.fieldLabel.value;
+            var fieldName = event.target.fieldName.value;
+            var fieldPlaceholder = event.target.fieldPlaceholder.value;
+            var fieldType = event.target.fieldType.value;
+            var selectOptions = event.target.selectOptions.value;
+            var required = $(event.target.isRequired).is(":checked");
+            fieldName = fieldName.replaceAll(" ", "-").trim();
+            fieldName.autocapitalize;
+            var temp = {
+              label: fieldLabel,
+              name: fieldName,
+              placeholder: fieldPlaceholder,
+              type: fieldType,
+              required: required
+            }
+            if(fieldType == "select"){
+                var data = selectOptions.split(",");
+                temp.values = data;
+              $("#field-preview").append( `<div>${ConstructSelectFeild(fieldLabel, fieldName, data, required, true, true )}</div>`);
+            }
+            else{
+              $("#field-preview").append( `<div>${ConstructFormFeild(fieldLabel, fieldName, fieldType, fieldPlaceholder, required, true, true )}</div>`);
+            }
+            if(checkDuplicate(fieldName)){return;}
+
+            fieldJson.push(temp);
+            sessionStorage.setItem('user-fields', JSON.stringify(fieldJson));
+            // $.ajax({
+            //     url: '/api/fields',
+            //     type: 'post',
+            //     dataType: 'json',
+            //     contentType: 'application/json',
+            //     success: function (data) {
+            //       alert(JSON.stringify(data));
+            //     },
+            //     error: function (data,status,error){
+            //       alert(JSON.stringify(data)+" //"+JSON.stringify(error));
+            //     },
+            //     data: JSON.stringify(fieldJson)
+            //   });
+          });
+
+    });
+
+    function checkDuplicate(fieldName){
+        var present = false;
+        $.each(fieldJson, (index, element)=>{
+                if(element.name == fieldName){
+                    alert("Cannot Add Field With Same Name. Please Change Name Field.")
+                    present = true;
+                    return false;
+                }
+                console.log(index)
+            });
+        return present;
+    }
+</script>
+{% endblock %}
